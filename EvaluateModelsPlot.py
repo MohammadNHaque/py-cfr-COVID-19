@@ -103,13 +103,14 @@ class EvaluateModelsPlots:
         x1 = data.index.values
         y1 = data["Confirmed"]
         # plotting the line 1 points
-        plt.plot(x1, y1, 'g', linewidth=2, label="Confirmed")
+        plt.plot(x1, y1, 'r.-', linewidth=1, label="Confirmed")
 
         # -- line 2 points
         x2 = x1
         y2 = data[model_col]
+
         # plotting the line 2 points
-        plt.plot(x2, y2, 'ro-', linewidth=2, markersize=5, label=model_col)
+        plt.plot(x2, y2, 'bo', linewidth=1, markersize=4, label=model_col)
 
         # -- Plot axis Labels
         plt.xlabel('Date')
@@ -123,6 +124,7 @@ class EvaluateModelsPlots:
         else: filename = self.dir_plot_model + "plt-Pred-" + country + "-" + model_col + ".pdf"
         plt.savefig(filename, bbox_inches='tight')
         plt.close(fig)
+        # sys.exit(0)
     #end plot functions
 
     def plot_overlay_lines_median(self, df_med, df_conf, country):
@@ -157,7 +159,7 @@ class EvaluateModelsPlots:
         x2 = x1
         y2 = plt_data["Models-Median"]
         # plotting the line 2 points
-        ax.plot(x2, y2, 'b.', markersize=5, label="Models-Median")
+        ax.plot(x2, y2, 'bo', markersize=4, label="Models-Median")
 
         # -- Plot axis Labels
         plt.yscale('log')
@@ -193,7 +195,7 @@ class EvaluateModelsPlots:
         # create shared y axes
         ax2 = ax.twiny()
         boxplot = df_box.plot(kind='box', grid=False, fontsize=8, title=txt_title, ax=ax)
-        df_line.plot(kind='line', style='ro-', linewidth=1.5, markersize=5, ax=ax2)
+        df_line.plot(kind='line', style='r.-', linewidth=1, markersize=5, ax=ax2)
         plt.setp(boxplot.get_xticklabels(), rotation=90)
 
         x_labels = df_box.T.index.strftime("%Y-%m-%d")
@@ -244,6 +246,10 @@ class EvaluateModelsPlots:
                                                                        row['D8'], row['D9'], row['D10'], row['D11'],
                                                                        row['D12'], row['D13'], row['D14']), axis=1)
 
+                # --- Plot the Model's Prediction
+                self.plot_model_pred(data, model_col, country)
+
+                #------ Prepare the Dataset for the Extended period's Predictions
                 last_date += datetime.timedelta(days=1)
                 row_l = data[-1:]   #last row of the dataset
                 pred = self.apply_model(test_model, row_l['Confirmed'], row_l['D1'], row_l['D2'], row_l['D3'],
@@ -257,10 +263,8 @@ class EvaluateModelsPlots:
                 # Concat new row
                 frames = [data, new_row]
                 data = pd.concat(frames)
-                #--- Plot the Model's Prediction
-                self.plot_model_pred(data, model_col, country)
 
-                #------ Prepare the Dataset for the Extended period's Predictions
+
                 for day in range(1, self.g_extend):
                     last_date += datetime.timedelta(days=1)
                     row_l = data[-1:]

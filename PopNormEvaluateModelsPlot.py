@@ -3,24 +3,24 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import datetime
 from myutils import check_directory,user_yes_no_query
+import sys
 
-class EvaluateModelsPlots:
+class PopNormEvaluateModelsPlots:
     g_extend = 30
     #-------------------- Directories to Save File -------------
-    dir_plot = "Plots/"
-    dir_plot_extnd = "Plots/ExtendedPred/"
-    dir_plot_model = "Plots/ModelPlots/"
-    dir_pred = "Predictions/"
-    dir_pred_extnd = "Predictions/ExtendedPred/"
+    dir_plot = "PN-Plots/"
+    dir_plot_extnd = "PN-Plots/ExtendedPred/"
+    dir_plot_model = "PN-Plots/ModelPlots/"
+    dir_pred = "PN-Predictions/"
+    dir_pred_extnd = "PN-Predictions/ExtendedPred/"
     dir_dataset = "Data/Dataset/"
 
-    def __init__(self, extend=30, lst_countries=[]):
+    def __init__(self, extend=30):
         self.g_extend = extend
         self.models=[]
-        if len(lst_countries) == 0:
-            self.countries = ["AU", "USA", "UK", "Spain", "S.Korea", "Italy", "Germany", "France", "Global"]
-        else:
-            self.countries = lst_countries
+        self.countries = ["AU", "USA", "UK", "Spain", "S.Korea", "Italy", "Germany", "France", "Global"]
+        self.country_pop = [25500, 331003, 67886, 46755, 51269,   60462,   83784,   65274,  7794799] #in Thousands
+        self.country_pop_norm = [60462.0/x for x in self.country_pop] #normalsied by italy
     # end function
 
     def assign_variables(self, string):
@@ -108,8 +108,8 @@ class EvaluateModelsPlots:
 
         # -- Save the figure.
         filename = ""
-        if is_extend: filename = self.dir_plot_extnd + "plt-Extended-Pred-" + country + "-" + model_col + ".pdf"
-        else: filename = self.dir_plot_model + "plt-Pred-" + country + "-" + model_col + ".pdf"
+        if is_extend: filename = self.dir_plot_extnd + "pn-plt-Extended-Pred-" + country + "-" + model_col + ".pdf"
+        else: filename = self.dir_plot_model + "pn-plt-Pred-" + country + "-" + model_col + ".pdf"
         plt.savefig(filename, bbox_inches='tight')
         plt.close(fig)
         # sys.exit(0)
@@ -125,7 +125,7 @@ class EvaluateModelsPlots:
         # print(plt_data.head())
         # styles = ['b.', 'r.-']  # , 'y^-']
         # ax = plt_data.plot(style=styles, logy=True, figsize=(12, 5))
-        # cmb_plt_file = self.dir_plot + "plt-Extended-Pred-" + country + "-MedLine-Log.pdf"
+        # cmb_plt_file = self.dir_plot + "pn-plt-Extended-Pred-" + country + "-MedLine-Log.pdf"
         # plt.savefig(cmb_plt_file, bbox_inches='tight')
         # plt.close(fig)
 
@@ -162,7 +162,7 @@ class EvaluateModelsPlots:
         ax.tick_params(which='minor', length=2, width=1, direction='in')
         # ax.grid(which='both')
 
-        cmb_plt_file = self.dir_plot + "plt-Extended-Pred-" + country + "-MedLine-Log.pdf"
+        cmb_plt_file = self.dir_plot + "pn-plt-Extended-Pred-" + country + "-MedLine-Log.pdf"
         plt.savefig(cmb_plt_file, bbox_inches='tight')
         plt.close(fig)
 
@@ -197,8 +197,8 @@ class EvaluateModelsPlots:
         ax2.legend(loc='upper left')  # , frameon=False)
 
         cmb_plt_file= self.dir_plot
-        if is_extend: cmb_plt_file = cmb_plt_file + "plt-Extended-Pred-" + country + "-BoxLine-Log.pdf"
-        else: cmb_plt_file = cmb_plt_file + "plt-Pred-" + country + "-BoxLine-Log.pdf"
+        if is_extend: cmb_plt_file = cmb_plt_file + "pn-plt-Extended-Pred-" + country + "-BoxLine-Log.pdf"
+        else: cmb_plt_file = cmb_plt_file + "pn-plt-Pred-" + country + "-BoxLine-Log.pdf"
 
         fig.savefig(cmb_plt_file, bbox_inches='tight')
         plt.close(fig)
@@ -218,13 +218,17 @@ class EvaluateModelsPlots:
             file = self.dir_dataset + "DS-non0-" + country + ".csv"
             data_orig = pd.read_csv(file, index_col=0, parse_dates=True)
 
+            # --- Apply Normalisation of the data according to pop-norm factor by Italy
+            pos = self.countries.index(country)
+            pn_factor = self.country_pop_norm[pos]
+            data_norm = data_orig/pn_factor
+
             # --- apply each of the models to the country data
             xls_path = self.dir_pred + "Extended-Pred-" + country + ".xlsx"
             writer = pd.ExcelWriter(xls_path, engine='xlsxwriter')
 
-            # --- apply each of the models to the country data
             for model_idx in range(1, len(self.models) + 1):
-                data = data_orig.copy()
+                data = data_norm.copy()
                 dates = data.index.values
                 last_date = pd.to_datetime(dates[-1])
 
@@ -295,7 +299,7 @@ class EvaluateModelsPlots:
             country_pred_data.to_csv(self.dir_pred + "Extend-Preds-Models-" + country + ".csv", index=True)
 
             # Exporting to Excel
-            country_pred_data["Average"] = country_pred_data.mean(axis=1)
+            country_pred_data["Average"]=country_pred_data.mean(axis=1)
             country_pred_data["Median"] = country_pred_data.median(axis=1)
 
             country_pred_data.to_excel(writer, sheet_name="AllModels", index=True)
@@ -320,6 +324,7 @@ class EvaluateModelsPlots:
             self.plot_overlay_lines_median(df, df_confirmed, country)
 
             print("Done Plotting for: " + country + "\n")
+            sys.exit(0)
         # end for country
     #end function run
 #end class
@@ -327,6 +332,6 @@ class EvaluateModelsPlots:
 
 if __name__ == '__main__':
     if user_yes_no_query("Warning!!!\nThis Execution will replace existing figures. Do you want to run now?")==True:
-        EvaluateModelsPlots().run(True)
+        PopNormEvaluateModelsPlots().run(True)
     else:
         print("Thank you for deciding to keep existing figures intact.")

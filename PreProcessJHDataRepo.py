@@ -1,5 +1,6 @@
 import pandas as pd
 import os
+from myutils import user_yes_no_query
 
 class PreProcessJHDataRepo:
     '''This is a class to read and process timeseries data from John Hopkins's Github Repository.'''
@@ -67,6 +68,11 @@ class PreProcessJHDataRepo:
    #end function run
 #end class
 
+
+
 if __name__ == '__main__':
-    PreProcessJHDataRepo().run(True)
+    if user_yes_no_query("Do you really want to replace existing .csv files (where 0 new cases were replaced by avg.)?")==True:
+        PreProcessJHDataRepo().run(True)
+    else:
+        print("Thank you for keeping existing data intact.")
 

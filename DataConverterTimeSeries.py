@@ -3,7 +3,7 @@ import numpy as np
 import os
 from os import path
 import sys
-
+from myutils import user_yes_no_query, check_directory
 
 class DataConverterTimeSeries:
     '''This is a class to  convert the time series to dataset format required for the cfrV2.'''
@@ -15,16 +15,6 @@ class DataConverterTimeSeries:
             self.countries = ["AU", "USA", "UK", "Spain", "S.Korea", "Italy", "Germany", "France", "Global"]
         else:
             self.countries = lst_countries
-
-    def check_data_directory(self, dbg=False):
-        dir_name = self.path
-        try:
-            # Create target Directory
-            os.mkdir(dir_name)
-            if dbg: print("Directory ", dir_name, " Created ")
-        except FileExistsError:
-            if dbg: print("Directory ", dir_name, " already exists")
-        # end try
 
     def check_country_files(self, dbg=False):
         for country in self.countries:
@@ -38,7 +28,7 @@ class DataConverterTimeSeries:
         #end for
 
     def run(self, dbg=False):
-        self.check_data_directory(dbg=dbg)
+        check_directory(self.path, dbg=dbg)
         self.check_country_files(dbg=dbg)
 
         if dbg:
@@ -99,4 +89,8 @@ class DataConverterTimeSeries:
 #end class
 
 if __name__ == '__main__':
-    DataConverterTimeSeries().run(True)
+    if user_yes_no_query("Do you really want to replace existing .csv files (where 0 new cases were replaced by avg.)?")==True:
+        DataConverterTimeSeries().run(True)
+    else:
+        print("Thank you for keeping existing data intact.")
+
